@@ -1,0 +1,153 @@
+var errormsg = "Error.Please use after some time or contact to Admin.";
+var errormsg001 = "Error 001. Please use after some time or contact to Admin.";
+var errormsg002 = "Error 002. Please use after some time or contact to Admin.";
+var memberTable;
+var Tot = 0;
+var lol = 0;
+var FromS = 1;
+var ToS = 30;
+
+$(document).ready(function () {
+    BindDetail();
+    BindCourse();
+    $("#ddlSpeciality").append($("<option></option>").val("0").html("-- All Speciality -- "));
+    $("#ddlCourse").change(function () {
+        Speciality();
+
+    });
+    $('#btnSearch').click(function () { BindDetail(); });
+
+    $('input[type=checkbox][name=abc]').change(function () {
+        if ($(this).prop('checked') == true) {
+            FromS = 1;
+            ToS = 30;
+            BindDetail();
+        }
+        else {
+            FromS = 0;
+             ToS = 0;
+            BindDetail();
+        }
+           
+    });
+});
+
+
+function BindDetail() {
+    var CourseId = $("#ddlCourse").val();
+    var SpecialityId = $("#ddlSpeciality").val();
+
+    var listItem = "";
+    $("#lblTotal").html("0");
+    $("#DataBody").html("");
+    var data =
+    {
+        "CourseId": CourseId,
+        "SpecialityId": SpecialityId,
+        "FromS": FromS,
+        "ToS": ToS,
+    };
+    $.ajax({
+        url: '/Academic/CandidateReportExcel',
+        data: JSON.stringify(data),
+        type: 'POST',
+        contentType: 'application/json; charset=utf-8',
+        success: function (response) {
+            if (response != "null") {
+                if (response == -3) {
+                    window.location.href = "/Login";//Session expired
+                }
+                else if (response == -1) {
+                    $("#error-msg").removeClass("d-none");
+                    $("#error-msg").html(errormsg);
+                }
+                else if (response == 0) {
+                    $("#error-msg").addClass("d-none");
+                    var table = $('#tblDetail').DataTable();
+                    table.destroy();
+                    $('#DataBody').empty();
+                    $('#tblDetail').DataTable({
+                        dom: 'Plfrtip',
+                        language: {
+                            searchPanes: {
+                                emptyPanes: 'No User in the table',
+                            }
+                        }
+                    });
+                }
+                else {
+                    $("#error-msg").addClass("d-none");
+                    var cou = 1;
+                    $("#tblDetail").DataTable().destroy();
+                    for (var i = 0; i < response.length; i++) {
+                        listItem += "<tr>";
+                        listItem += "<td>" + cou + "</td>";
+                        listItem += "<td>" + response[i].CourseName + "</td>";
+                        listItem += "<td>" + response[i].SpecialityName + "</td>";
+                        listItem += "<td>" + response[i].DepartmentName + "</td>";
+                        listItem += "<td><span id='spnGEnrollmentNo'>" + response[i].EnrollmentNo + "</span></td>";
+                        listItem += "<td><span id='spnGCondidate'>" + response[i].CandidateName + "</span></td>";
+                        listItem += "<td><span id='spnGMobile'>" + response[i].Mobile + "</span></td>";
+                        listItem += "<td><span id='spnGEmailId'>" + response[i].EmailId + "</span></td>";
+                        //listItem += "<td>" + response[i].CandidateDOB + "</td>";
+                        listItem += "<td>" + 124 + "</td>";
+                        listItem += "</tr>";
+                        cou++;
+                    }
+                    $("#DataBody").html(listItem);
+                    $("#lblTotal").html($('#DataBody tr').length);
+                   // feather.replace();
+                    memberTable = $('#tblDetail').DataTable({
+                        retrieve: true,
+                        lengthChange: false,
+                        "order": [[1, "asc"]],
+                        buttons: [{
+                            extend: 'copy',
+                            exportOptions: {
+                                columns: "thead th:not(.noExport)"
+                            }
+                        }, {
+                            extend: 'excel',
+                            exportOptions: {
+                                columns: "thead th:not(.noExport)"
+                            }
+                        }, {
+                            extend: 'pdf',
+                            exportOptions: {
+                                columns: "thead th:not(.noExport)"
+                            }
+                        }]
+                    });
+
+                    memberTable.buttons().container().appendTo('#tblDetail_wrapper .col-md-6:eq(0)');
+
+
+                }
+            }
+            else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: errormsg001
+                });
+                $("#error-msg").removeClass("d-none");
+                $("#error-msg").html(errormsg001);
+            }
+        },
+        error: function (result) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: errormsg002
+            });
+            $("#error-msg").removeClass("d-none");
+            $("#error-msg").html(errormsg002);
+        }
+    });
+}
+
+
+
+
+
+
